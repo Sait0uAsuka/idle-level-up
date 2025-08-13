@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Idle Level-Up（触屏版 Demo）</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0e1117"/>
+  <style>
+    :root { --bg:#0e1117; --panel:#161b22; --text:#e6edf3; --muted:#9da7b3; --accent:#4f86ff; }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:-apple-system,system-ui,Segoe UI,Roboto,Helvetica,Arial; color:var(--text); background:linear-gradient(180deg,#0b0f14, #0e1117 120%)}
+    header{position:sticky; top:0; backdrop-filter:saturate(1.2) blur(8px); background:#0e1117cc; border-bottom:1px solid #202632; padding:14px 16px; display:flex; gap:12px; align-items:center; justify-content:space-between}
+    h1{margin:0; font-size:18px; letter-spacing:0.4px}
+    .container{max-width:1080px; margin:16px auto; padding:0 12px; display:grid; gap:12px; grid-template-columns:1.15fr 1fr}
+    @media (max-width:900px){.container{grid-template-columns:1fr}}
+    .card{background:var(--panel); border:1px solid #202632; border-radius:14px; padding:14px; box-shadow:0 6px 20px #0004}
+    .row{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
+    .stat{padding:8px 10px; border-radius:10px; background:#121720; border:1px solid #202632; min-width:110px}
+    .stat b{display:block; font-size:12px; color:var(--muted); font-weight:600}
+    .stat span{font-variant-numeric:tabular-nums}
+    .btn{appearance:none; border:none; background:var(--accent); color:white; padding:10px 14px; border-radius:12px; font-weight:700; cursor:pointer}
+    .btn.secondary{background:#2b3340}
+    .title{font-size:14px; font-weight:700; color:#cdd6e1; margin-bottom:8px; letter-spacing:0.3px}
+    .bar{height:12px; background:#202632; border-radius:10px; overflow:hidden; border:1px solid #283142}
+    .bar>div{height:100%; background:linear-gradient(90deg,#4f86ff,#8aa5ff); width:0}
+    .cols{display:grid; gap:12px; grid-template-columns:repeat(3,1fr)}
+    @media (max-width:720px){.cols{grid-template-columns:1fr}}
+    .eq{display:grid; gap:8px; grid-template-columns:1fr auto}
+    .eq .meta{font-size:12px; color:var(--muted)}
+    .eq .name{font-weight:700}
+    .eq .t{font-size:12px; opacity:0.85}
+    .inv{display:grid; grid-template-columns:repeat(6,1fr); gap:8px}
+    .slot{background:#121720; border:1px dashed #2a3241; min-height:70px; border-radius:10px; padding:8px; display:flex; flex-direction:column; justify-content:space-between}
+    .rar-c{color:#aab7c6}.rar-u{color:#6ee7b7}.rar-r{color:#93c5fd}.rar-e{color:#fbbf24}.rar-l{color:#fb7185}
+    .log{height:180px; overflow:auto; background:#0c1016; border:1px solid #202632; border-radius:10px; padding:10px; font-size:12px}
+    .monster{display:flex; align-items:center; gap:12px}
+    .monster .hp{flex:1}
+    small{color:var(--muted)}
+    .footer{opacity:0.7; font-size:12px; text-align:center; padding:10px}
+    a{color:#8aa5ff}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Idle Level-Up · 触屏版 Demo</h1>
+    <div class="row">
+      <button class="btn secondary" id="saveBtn">保存</button>
+      <button class="btn secondary" id="exportBtn">导出</button>
+      <button class="btn secondary" id="importBtn">导入</button>
+      <button class="btn" id="rebirthBtn">转生</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card" id="left">
+      <div class="title">角色面板</div>
+      <div class="row">
+        <div class="stat"><b>等级</b><span id="level">1</span></div>
+        <div class="stat" style="min-width:160px"><b>经验</b>
+          <div class="bar"><div id="xpBar"></div></div>
+          <small><span id="xp">0</span>/<span id="xpMax">50</span></small>
+        </div>
+        <div class="stat"><b>金币</b><span id="gold">0</span></div>
+        <div class="stat"><b>战力</b><span id="power">1</span></div>
+        <div class="stat"><b>转生加成</b><span id="essence">0%</span></div>
+      </div>
+      <div style="height:12px"></div>
+      <div class="title">战斗</div>
+      <div class="monster">
+        <div>
+          <div><b id="mName">史莱姆</b> <small>Lv.<span id="mLv">1</span></small></div>
+          <div class="hp bar"><div id="hpBar"></div></div>
+          <small>HP <span id="mHp">30</span>/<span id="mHpMax">30</span></small>
+        </div>
+        <button class="btn" id="hitBtn">手动攻击</button>
+      </div>
+      <div style="height:12px"></div>
+      <div class="title">日志</div>
+      <div class="log" id="log"></div>
+    </section>
+
+    <section class="card" id="right">
+      <div class="title">装备</div>
+      <div class="cols">
+        <div class="eq">
+          <div>
+            <div class="name" id="wName">木剑</div>
+            <div class="meta"><span id="wStat">+1 攻击</span> · <span class="t" id="wRar">普通</span></div>
+          </div>
+          <div><button class="btn secondary" id="wUp">强化武器</button></div>
+        </div>
+        <div class="eq">
+          <div>
+            <div class="name" id="aName">布甲</div>
+            <div class="meta"><span id="aStat">+1 防御</span> · <span class="t" id="aRar">普通</span></div>
+          </div>
+          <div><button class="btn secondary" id="aUp">强化护甲</button></div>
+        </div>
+        <div class="eq">
+          <div>
+            <div class="name" id="rName">铜戒</div>
+            <div class="meta"><span id="rStat">+2% 伤害</span> · <span class="t" id="rRar">普通</span></div>
+          </div>
+          <div><button class="btn secondary" id="rUp">强化饰品</button></div>
+        </div>
+      </div>
+      <div style="height:12px"></div>
+      <div class="title">背包</div>
+      <div class="inv" id="inv"></div>
+    </section>
+  </main>
+
+  <div class="footer">添加到主屏幕后可全屏运行；支持离线缓存与本地存档。</div>
+
+<script>
+  // ===== 核心数据 =====
+  const RARITY=[{k:'c',name:'普通',mult:1},{k:'u',name:'罕见',mult:1.3},{k:'r',name:'稀有',mult:1.7},{k:'e',name:'史诗',mult:2.3},{k:'l',name:'传说',mult:3.2}];
+  const SLOT=['weapon','armor','ring'];
+  const SKEY='idleLevelUpSave';
+  const state={level:1,xp:0,xpMax:50,gold:0,essence:0,eq:{weapon:{name:'木剑',rarity:0,atk:1,lv:1},armor:{name:'布甲',rarity:0,def:1,lv:1},ring:{name:'铜戒',rarity:0,dmgPct:0.02,lv:1}},inv:[],monster:{name:'史莱姆',lv:1,hp:30,hpMax:30,baseHp:30},lastTick:Date.now(),autosave:0};
+  const el=id=>document.getElementById(id);
+  function rng(){return Math.random()} function pickR(){const p=rng();return p<.6?0:p<.85?1:p<.95?2:p<.99?3:4;}
+  function fmt(n){return Math.floor(n).toLocaleString('zh-CN')}
+  function power(){const w=state.eq.weapon.atk*RARITY[state.eq.weapon.rarity].mult*state.eq.weapon.lv;const r=(1+(state.eq.ring.dmgPct||0)*state.eq.ring.lv)*RARITY[state.eq.ring.rarity].mult;const e=1+state.essence*.05;return Math.max(1,Math.round(w*r*e));}
+  function gainXP(n){state.xp+=n;while(state.xp>=state.xpMax){state.xp-=state.xpMax;state.level++;state.xpMax=Math.floor(state.xpMax*1.25+10);log(`[升级] Lv.${state.level}`);nextMonster(true);}}
+  function gold(n){state.gold+=n;}
+  function damage(d){const m=state.monster;m.hp-=d;if(m.hp<=0){const g=Math.floor(5+m.lv*2+rng()*m.lv);gold(g);gainXP(10+Math.floor(m.lv*1.2));drop();nextMonster();}}
+  function drop(){if(rng()<.3){const s=SLOT[Math.floor(rng()*SLOT.length)],r=pickR(),b=1+state.level*.8;let it;if(s==='weapon')it={slot:s,name:['短剑','长剑','巨剑','战斧'][Math.floor(rng()*4)],rarity:r,atk:Math.round(b*(.8+r*.5))};if(s==='armor')it={slot:s,name:['皮甲','锁甲','胸铠','法袍'][Math.floor(rng()*4)],rarity:r,def:Math.round(b*(.6+r*.4))};if(s==='ring')it={slot:s,name:['银戒','金戒','玛瑙戒','龙戒'][Math.floor(rng()*4)],rarity:r,dmgPct:.01+r*.01+Math.min(.08,state.level*.0008)};state.inv.unshift(it);if(state.inv.length>24)state.inv.pop();renderInv();log(`[掉落] ${it.name}`);}}
+  function nextMonster(lvUp=false){const m=state.monster;if(lvUp)m.lv=state.level;else m.lv++;const hp=Math.floor((m.baseHp+m.lv*12)*(1+m.lv*.02));m.hpMax=hp;m.hp=hp;m.name=['史莱姆','野狼','盗贼','巨鼠','骷髅','蜥蜴人','石魔'][m.lv%7];}
+  function upgrade(slot){const eq=state.eq[slot],cost=100*Math.pow(2,eq.lv-1);if(state.gold<cost){log('金币不足');return;}state.gold-=cost;eq.lv++;if(slot==='weapon')eq.atk+=Math.ceil(eq.atk*.3+eq.lv);if(slot==='armor')eq.def+=Math.ceil(eq.def*.25+eq.lv*.8);if(slot==='ring')eq.dmgPct=(eq.dmgPct||0)+.01;log(`[强化] ${slot} Lv.${eq.lv}`);save();render();}
+  function loop(){const now=Date.now(),dt=Math.min(1000,now-state.lastTick);state.lastTick=now;const step=dt/1000;state.monster.hp-=power()*step;if(state.monster.hp<=0){let over=-state.monster.hp;while(true){const g=Math.floor(5+state.monster.lv*2+rng()*state.monster.lv);gold(g);gainXP(10+Math.floor(state.monster.lv*1.2));drop();nextMonster();const need=state.monster.hpMax;if(over>=need){over-=need;continue;}state.monster.hp=need-over;break;}}render();state.autosave+=dt;if(state.autosave>5000){save();state.autosave=0;}requestAnimationFrame(loop);}
+  function log(msg){const box=el('log');const p=document.createElement('div');p.textContent='['+new Date().toLocaleTimeString()+'] '+msg;box.prepend(p);while(box.children.length>120)box.removeChild(box.lastChild);}
+  function save(){localStorage.setItem(SKEY,JSON.stringify(state));}
+  function load(){const raw=localStorage.getItem(SKEY);if(!raw)return;try{Object.assign(state,JSON.parse(raw));}catch(e){}}
+  function render(){el('level').textContent=state.level;el('xp').textContent=fmt(state.xp);el('xpMax').textContent=fmt(state.xpMax);el('gold').textContent=fmt(state.gold);el('power').textContent=fmt(power());el('essence').textContent=Math.floor(state.essence*5)+'%';el('mName').textContent=state.monster.name;el('mLv').textContent=state.monster.lv;el('mHp').textContent=fmt(state.monster.hp);el('mHpMax').textContent=fmt(state.monster.hpMax);el('xpBar').style.width=Math.min(100,state.xp/state.xpMax*100)+'%';el('hpBar').style.width=Math.max(0,Math.min(100,state.monster.hp/state.monster.hpMax*100))+'%';const w=state.eq.weapon,a=state.eq.armor,r=state.eq.ring;el('wName').innerHTML=`<span class="rar-${RARITY[w.rarity].k}">${w.name}</span> Lv.${w.lv}`;el('aName').innerHTML=`<span class="rar-${RARITY[a.rarity].k}">${a.name}</span> Lv.${a.lv}`;el('rName').innerHTML=`<span class="rar-${RARITY[r.rarity].k}">${r.name}</span> Lv.${r.lv}`;el('wStat').textContent=`+${w.atk} 攻击`;el('aStat').textContent=`+${a.def} 防御`;el('rStat').textContent=`+${Math.round((r.dmgPct||0)*100)}% 伤害`;el('wRar').textContent=RARITY[w.rarity].name;el('aRar').textContent=RARITY[a.rarity].name;el('rRar').textContent=RARITY[r.rarity].name;}
+  function renderInv(){const inv=el('inv');inv.innerHTML='';state.inv.forEach((it,i)=>{const d=document.createElement('div');d.className='slot';d.innerHTML=`<div class="name rar-${RARITY[it.rarity].k}">${it.name}</div><div class="t">${it.slot==='weapon'?'攻击 +'+it.atk:it.slot==='armor'?'防御 +'+it.def:'伤害 +'+Math.round((it.dmgPct||0)*100)+'%'}</div><div class="t">${RARITY[it.rarity].name}</div><button class="btn" style="width:100%">装备</button>`;d.querySelector('button').onclick=()=>{const cur=state.eq[it.slot];state.eq[it.slot]={...it,lv:(it.lv||1)};state.inv[i]={slot:it.slot,name:cur.name,rarity:cur.rarity,atk:cur.atk,def:cur.def,dmgPct:cur.dmgPct,lv:cur.lv};render();renderInv();save();};inv.appendChild(d);});}
+  function exportSave(){const blob=new Blob([localStorage.getItem(SKEY)||'{}'],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='IdleLevelUpSave.json';a.click();}
+  function importSave(){const input=document.createElement('input');input.type='file';input.accept='application/json';input.onchange=()=>{const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{localStorage.setItem(SKEY,r.result);location.reload();};r.readAsText(f);};input.click();}
+  function rebirth(){const gain=Math.max(1,Math.floor(state.level/20));if(!confirm(`转生可获得 ${gain} 点本质（永久 +5%/点 伤害），是否继续？`))return;state.essence+=gain;const keep={essence:state.essence};Object.assign(state,{level:1,xp:0,xpMax:50,gold:0,eq:{weapon:{name:'木剑',rarity:0,atk:1,lv:1},armor:{name:'布甲',rarity:0,def:1,lv:1},ring:{name:'铜戒',rarity:0,dmgPct:0.02,lv:1}},inv:[],monster:{name:'史莱姆',lv:1,hp:30,hpMax:30,baseHp:30},lastTick:Date.now(),autosave:0,essence:keep.essence});save();render();}
+  document.getElementById('hitBtn').onclick=()=>{damage(Math.ceil(power()*0.6));render();};
+  document.getElementById('wUp').onclick=()=>upgrade('weapon');
+  document.getElementById('aUp').onclick=()=>upgrade('armor');
+  document.getElementById('rUp').onclick=()=>upgrade('ring');
+  document.getElementById('saveBtn').onclick=save;
+  document.getElementById('exportBtn').onclick=exportSave;
+  document.getElementById('importBtn').onclick=importSave;
+  document.getElementById('rebirthBtn').onclick=rebirth;
+  load();const now=Date.now();const offline=Math.min(1000*60*60*12,now-state.lastTick);if(offline>2000){const dps=power();const avgHp=Math.max(30,state.monster.hpMax);const kills=Math.floor((dps*(offline/1000))/avgHp);state.gold+=kills*Math.floor(5+state.monster.lv*2);state.xp+=kills*(10+Math.floor(state.monster.lv*1.2));}state.lastTick=Date.now();render();renderInv();requestAnimationFrame(loop);
+
+  // Register Service Worker for PWA/offline
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js');
+    });
+  }
+</script>
+</body>
+</html>
